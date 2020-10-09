@@ -1,0 +1,217 @@
+<style>
+
+</style>
+<div>
+    <p>评论管理</p>
+    <div class="btns">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#commentModel">
+            新增
+        </button>
+        <button class="btn btn-danger" id="batchDel">删除</button>
+    </div>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">编号</th>
+            <th scope="col">审核状态</th>
+            <th scope="col">评论内容</th>
+            <th scope="col">评论时间</th>
+            <th scope="col">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+
+
+
+    
+    <!-- Modal -->
+    <div class="modal fade" id="commentModel" tabindex="-1" role="dialog" aria-labelledby="commentModelLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="commentModelLabel">输入栏目信息</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                      <label for="comment_status">审核状态</label>
+                      <input type="email" class="form-control" id="comment_status" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                        <div class="form-group">
+                            <label for="comment_comment">评论内容</label>
+                            <input type="email" class="form-control" id="comment_comment" aria-describedby="emailHelp">
+                          </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-group">
+                            <label for="comment_parentId">选择父栏目</label>
+                            <select class="form-control" id="comment_parentId"> 
+                            </select>
+                          </div>
+                    </div>
+                  </form>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            <button type="button" class="btn btn-primary" id="submitChange">确定</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <div>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+              
+            </ul>
+          </nav>
+    </div>
+</div>
+<script>
+    var alldata
+    var Id = null
+    var date = new Date()
+    var d = new Date()
+    var page = 1
+    loadcomment()
+    $('.btns>button:first-child').on('click',()=>{
+        $('#commentModel').modal('show')
+        $('#comment_status').val('')
+        $('#comment_comment').val('')
+        $('#comment_parentId').val('')
+    })
+    //ul代理li，完成分页
+    $('.pagination').on('click','li',()=>{
+        switch ($(event.target).text()){
+            case 'Previous':
+                page == 1?page=1:page--
+                loadcomment()
+                break
+            case 'Next':
+                page == pagecount?page = pagecount:page++
+                loadcomment()
+                break
+            default:
+                page = $(event.target).text()
+                loadcomment()
+                break
+        }
+    })
+    //tbody代理 编辑 按钮，按钮呼出模态框
+    $('tbody').on('click','#commentEdit',()=>{
+        $('#commentModel').modal('show')
+        var currentId = $(event.target.closest('tr')).find('input').val()
+        var currentData = alldata.filter((item)=>{
+            return item.id ==currentId
+        })
+        $('#comment_status').val(currentData[0].status)
+        $('#comment_comment').val(currentData[0].content)
+        $('#comment_parentId').val(currentData[0].parentId)
+        Id = currentId
+        console.log(currentData)
+        // saveOrUpdate(currentId)
+        // loadcomment()
+
+    })
+    //删除按钮
+    $('tbody').on('click','#commentDel',()=>{
+        $.get('http://47.93.255.92:7788/comment/deleteById',{id:$(event.target.closest('tr')).find('input').val()},(resp)=>{
+            alert(resp.message)
+            loadcomment()
+        })
+    })
+    //批量删除按钮
+    $('#batchDel').on('click',()=>{
+        var ids = []
+        ids = Array.from($(':checkbox:checked')).map((item)=>{
+            return item.value
+        })
+        console.log(ids.toString())
+        $.post('http://47.93.255.92:7788/comment/batchDelete',ids.toString(),(resp)=>{
+            alert(resp.message)
+            loadcomment()
+        })
+    })
+    //新增栏目
+    $('#submitChange').on('click',()=>{
+        Id?saveOrUpdate(Id):saveOrUpdate()
+        Id=''
+    })
+    function saveOrUpdate(){
+        var data = {
+            status : $('#comment_status').val(),
+            content : $('#comment_comment').val(),
+            commentTime : date.valueOf(),
+            parentId : $('#comment_parentId').val()
+        }
+        if(arguments){data.id=arguments[0]}
+        console.log(data)
+        $.post('http://47.93.255.92:7788/comment/saveOrUpdate',data,(resp)=>{
+            alert(resp.message)
+            $('#commentModel').modal('hide')
+            loadcomment()
+        })
+        
+        
+
+    }
+    //查询所有的栏目并写入table
+    function loadcomment(){
+        
+        $('tbody').empty()
+        $('.pagination').empty()
+        $.get('http://47.93.255.92:7788/comment/pageQuery',{page,pageSize:6},(resp)=>{
+            alldata = resp.data.list
+            pagecount = resp.data.total
+            resp.data.list.forEach(item => {
+                d.setTime(item.commentTime.toString())
+                var html = $(
+                `<tr>
+                <td scope="row"><input type='checkbox' name='commentitems' value='`+item.id+`'></td>
+                <td>`+item.status+`</td>
+                <td>`+item.content+`</td>
+                <td>`+d+`</td>
+                <td>
+                    <span id='commentEdit' data-toggle="modal" data-target="#commentModel">
+                        编辑
+                    </span>
+                    <span id='commentDel' >
+                        删除
+                    </span>
+                </td>
+                </tr>
+            `)
+                $('tbody').append(html)
+            });
+            //过滤分页符
+            var pageHtml = $('<li class="page-item"><a class="page-link" href="#">Previous</a></li>')
+            $('.pagination').append(pageHtml)
+            for(var i = 0;i<pagecount;i++)
+            {
+                pageHtml = $('<li class="page-item"><a class="page-link" href="#">'+(i+1)+'</a></li>')
+                $('.pagination').append(pageHtml)
+
+            }
+            $('.pagination').append($('<li class="page-item"><a class="page-link" href="#">Next</a></li>'))
+            //过滤父栏目
+            var parent = resp.data.list.filter((item)=>{
+                return item.parentId == null
+            })
+            parent.forEach((item)=>{
+                var html = $(
+                    `
+                    <option value=`+item.id+`>`+item.name+`</option>
+                    `
+                
+                )
+                $('#comment_parentId').append(html)
+            })
+        })
+    }
+</script>

@@ -1,0 +1,24 @@
+<body>
+    <div class="content_welcome">
+    <span>欢迎您， &nbsp;</span><span></span>
+</div>
+</body>
+
+<script>
+    $.ajax({
+        url:'http://47.93.255.92:7788/user/info',
+        method:'GET',
+        data:{token:sessionStorage.getItem('token')},
+        success:(reps)=>{
+            if(reps.status == 200){
+                console.log(reps.data)
+            // for(var i in reps.data){
+            //     $('.content>span').append('span').text(''+i+' '+reps.data[i])
+            // } 
+                $('.content_welcome>span:last-child').text(reps.data.realname)
+            }
+        },
+        error:()=>{}
+        
+    })
+</script>

@@ -1,0 +1,28 @@
+.category{
+    height: 100%;
+}
+.category-tree{
+    width: 13%;
+    height: 100%;
+    float: left;
+}
+#category-tree{
+  height: 95%;
+  width: 100%;
+  overflow: auto;
+  background: white;
+}
+#category-tree a span{
+    font-size: 14px !important;
+}
+.category-content{
+    float: right;
+    width: 85%;
+    height: 100%;
+    padding: 10px;
+    overflow-y: auto;
+}
+.category-option button{
+    margin-right: 5px;
+    margin-bottom: 5px;
+}

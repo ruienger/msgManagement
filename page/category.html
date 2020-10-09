@@ -1,0 +1,174 @@
+<style>
+
+</style>
+<div>
+    <p>栏目管理</p>
+    <div class="btns">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#categoryModel">
+            新增
+        </button>
+        <button class="btn btn-danger" id="batchDel">删除</button>
+    </div>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">编号</th>
+            <th scope="col">栏目名称</th>
+            <th scope="col">栏目描述</th>
+            <th scope="col">父栏目</th>
+            <th scope="col">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+
+
+
+    
+    <!-- Modal -->
+    <div class="modal fade" id="categoryModel" tabindex="-1" role="dialog" aria-labelledby="categoryModelLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="categoryModelLabel">输入栏目信息</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                      <label for="category_name">栏目名称</label>
+                      <input type="email" class="form-control" id="category_name" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                        <div class="form-group">
+                            <label for="category_parentId">选择父栏目</label>
+                            <select class="form-control" id="category_parentId">
+                                <option value="">无</option>
+                            </select>
+                          </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="category_description">栏目描述</label>
+                        <textarea class="form-control" aria-label="With textarea" id="category_description"></textarea>
+                    </div>
+                    
+                  </form>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            <button type="button" class="btn btn-primary" id="submitChange">确定</button>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+<script>
+    var alldata
+    var Id = null
+    loadCategory()
+    $('.btns>button:first-child').on('click',()=>{
+        $('#category_name').val('')
+        $('#category_parentId').val('')
+        $('#category_description').val('')
+        $('#categoryModel').modal('show')
+        
+    })
+    
+    //tbody代理 编辑 按钮，按钮呼出模态框
+    $('tbody').on('click','#categoryEdit',()=>{
+        $('#categoryModel').modal('show')
+        var currentId = $(event.target.closest('tr')).find('input').val()
+        var currentData = alldata.filter((item)=>{
+            return item.id ==currentId
+        })
+        $('#category_name').val(currentData[0].name)
+        $('#category_parentId').val(currentData[0].parentId)
+        $('#category_description').val(currentData[0].description)
+        Id = currentId
+        // saveOrUpdate(currentId)
+        // loadCategory()
+
+    })
+    //删除按钮
+    $('tbody').on('click','#categoryDel',()=>{
+        $.get('http://47.93.255.92:7788/category/deleteById',{id:$(event.target.closest('tr')).find('input').val()},(resp)=>{
+            alert(resp.message)
+            loadCategory()
+        })
+    })
+    //批量删除按钮
+    $('#batchDel').on('click',()=>{
+        var ids = []
+        ids = Array.from($(':checkbox:checked')).map((item)=>{
+            return item.value
+        })
+        $.post('http://47.93.255.92:7788/category/batchDelete',ids.toString(),(resp)=>{
+            alert(resp.message)
+            loadCategory()
+        })
+    })
+    //新增栏目
+    $('#submitChange').on('click',()=>{
+        Id?saveOrUpdate(Id):saveOrUpdate()
+        Id=''
+        loadCategory()
+    })
+    function saveOrUpdate(){
+        var data = {
+            name : $('#category_name').val(),
+            parentId : $('#category_parentId').val(),
+            description : $('#category_description').val()
+        }
+        if(arguments){data.id=arguments[0]}
+        $.post('http://47.93.255.92:7788/category/saveOrUpdate',data,(resp)=>{
+            alert(resp.message)
+            $('#categoryModel').modal('hide')
+        })
+        
+        
+
+    }
+    //查询所有的栏目并写入table
+    function loadCategory(){
+        
+        $('tbody').empty()
+        $.get('http://47.93.255.92:7788/category/findAll',(resp)=>{
+            alldata = resp.data
+            resp.data.forEach(item => {
+                var html = $(
+                `<tr>
+                <td scope="row"><input type='checkbox' name='categoryitems' value='`+item.id+`'></td>
+                <td>`+item.name+`</td>
+                <td>`+item.description+`</td>
+                <td>`+resp.data.filter((i)=>{return i.id == item.parentId}).name+`</td>
+                <td>
+                    <span id='categoryEdit' data-toggle="modal" data-target="#categoryModel">
+                        编辑
+                    </span>
+                    <span id='categoryDel' >
+                        删除
+                    </span>
+                </td>
+                </tr>
+            `)
+                $('tbody').append(html)
+            });
+            //过滤父栏目
+            var parent = resp.data.filter((item)=>{
+                return item.parentId == null
+            })
+            parent.forEach((item)=>{
+                var html = $(
+                    `
+                    <option value=`+item.id+`>`+item.name+`</option>
+                    `
+                
+                )
+                $('#category_parentId').append(html)
+            })
+        })
+    }
+</script>

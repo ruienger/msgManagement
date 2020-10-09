@@ -1,0 +1,395 @@
+<head>
+    <style>
+        .ari-navbar{
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .ari-content{
+            display: flex;
+            flex-wrap: wrap;
+            padding-top: 40px;
+        }
+        .card-text{
+            width: 310px;
+            height: 250px;
+            overflow: auto;
+        }
+        .card-title{
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            
+        }
+        .card-title img{
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+        }
+        .card{
+            width: 350px;
+            height: 420px;
+            margin: 0 20px 20px 20px;
+            border: 1px solid #999;
+        }
+        .card input{
+            display: none;
+        }
+        .ari-navbar>button{
+            border-radius: 50%;
+            position: fixed;
+            right: 40px;
+        }
+        .ari-navbar input{
+            outline: none;
+            border: 1px solid #333;
+            margin-left: 20px;
+        }
+        .ari-navbar>div{
+            padding-right: 50px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="ari-navbar">
+        <nav class="nav">
+            
+        </nav>
+        <div>
+            <input type="text" id="searchInfo"><button type="button" class="btn btn-primary" id="searchBTN">搜索</button>
+        </div>
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#artModal">
+        +
+        </button>
+    </div>
+    <!-- 详情 -->
+    <div class="ari-content">
+        <div>title</div>
+    </div>
+    <div class="pagination"></div>
+    
+  
+  <!-- Modal -->
+  <div class="modal fade" id="artModal" tabindex="-1" role="dialog" aria-labelledby="artModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="artModalLabel">更新文章内容</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <form>
+                <div class="form-group">
+                  <label for="artTitle">文章标题</label>
+                  <input type="email" class="form-control" id="artTitle">
+                </div>
+                <div class="form-group">
+                  <label for="artParent">文章栏目</label>
+                  <select class="form-control" id="artParent">
+                    <option value="null">无</option>
+
+                  </select>
+                </div>
+                <div class="form-group">
+                    <label for="artStatus">审核状态</label>
+                    <select class="form-control" id="artStatus">
+                        <option value="已通过">已通过</option>
+                        <option value="未审核">未审核</option>
+                    </select>
+                  </div>
+                <div class="form-group">
+                  <label for="editor">文章内容</label>
+                  <div id="editor"></div>
+                </div>
+                <div class="form-group">
+                    <label for="imagepath">上传图片</label>
+                        <input type="hidden" id="imagepath" name="">  <!-- 保存的图片id 用于表单提交 -->
+                        <span id="upload_duixiang">上传</span><!-- 上传按钮 -->
+                        <div class="show"></div> <!-- 输出图片 -->
+                    </div>
+              </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="submit">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+    
+    $(function(){
+        var category = []
+        var data 
+        var updateList={}
+        var imgUrl
+        var page = 1
+        var total = 1
+        var selection = 'all'
+        var title = ''
+        loadInfo(selection)
+        // loadInfo(data)
+        //导航栏分页
+        $('.nav').on('click','a',(event)=>{
+            if($(event.target).text()=='所有'){
+                selection = 'all'
+               
+            }else{
+                selection = $(event.target).text()
+            }
+            loadInfo(selection)
+            
+        })
+        //为删除设置代理
+        $('.ari-content').on('click','.card-link',(event)=>{
+            switch($(event.target).text()){
+                case '编辑':
+                    saveOrUpdate($(event.target).closest('div').find('input').val())
+                    break
+                case '删除':
+                    delInfoById($(event.target).closest('div').find('input').val())
+                    break
+
+            }
+        })
+        $('#submit').on('click',()=>{
+                updateList.title = $('#artTitle').val()
+                updateList.content = $('.w-e-text').text()
+                updateList.categoryId = data.filter((item)=>{
+                    return item.category.name == $('#artParent').val()
+                })[0].categoryId
+                updateList.status = $('#artStatus').val()
+                updateList.source = imgUrl
+            console.log($('.w-e-text').text())
+            console.log(updateList)
+            $.post('http://47.93.255.92:7788/article/saveOrUpdate',updateList,(resp)=>{
+                alert(resp.message)
+                loadInfo('all')
+            })
+            $('#artModal').modal('hide')
+            
+
+        })
+        $('.ari-navbar>button').on('click',()=>{
+            saveOrUpdate()
+        })
+        //分页查询数据
+        $('#searchBTN').on('click',(event)=>{
+                title = $('#searchInfo').val()
+                console.log('////////////////////////'+title)
+                loadInfo(selection)
+            })
+        $('.pagination').on('click','li',(event)=>{
+                switch ($(event.target).text()){
+                    case 'Previous':
+                        page == 1?page=1:page--
+                        loadInfo(selection)
+                        break
+                    case 'Next':
+                        page == pagecount?page = pagecount:page++
+                        loadInfo(selection)
+                        break
+                    default:
+                        page = $(event.target).text()
+                        loadInfo(selection)
+                        break
+                }
+            })
+        //初始化详细信息
+        function loadInfo(select){
+            $.get('http://47.93.255.92:7788/article/cascadeFindAll',(resp)=>{
+            //category存放栏目信息
+            data = resp.data
+            //初始化导航栏
+            
+            var list=data.map(element => {
+                return element.category.name
+            })
+            
+            list.forEach((ele)=>{
+                if(category.indexOf(ele)== -1 ){
+                    category.push(ele)
+                }
+            })
+            $('.ari-navbar>nav').empty()
+            $('.ari-navbar>nav').prepend('<a class="nav-link active" href="#">所有</a>')
+            category.forEach((ele)=>{
+                var html = $(`<a class="nav-link" href="#">`+ele+`</a>`)
+                $('.ari-navbar>nav').prepend(html)
+            })
+            //ul代理li，完成分页
+            
+            if(title == ''){
+                currentData = {
+                    page:page,
+                    pageSize:8,
+                }
+            }else{
+                currentData = {
+                    page:page,
+                    pageSize:8,
+                    title:title
+                }
+            }
+            $.get('http://47.93.255.92:7788/article/pageQuery',currentData,(resp)=>{
+                pgdata = resp.data.list
+                total = resp.data.total
+                //分页
+                var selectedArr
+                var info
+                if(select=='all'){
+                info = pgdata
+                }else{
+                    selectedArr = pgdata.filter((item)=>{
+                        return item.category.name == select
+                    })
+                    info = (selectedArr)
+                }
+                //过滤分页符
+                $('.pagination').empty()
+                var pageHtml = $('<li class="page-item"><a class="page-link" href="#">Previous</a></li>')
+                $('.pagination').append(pageHtml)
+                for(var i = 0;i<total;i++)
+                {
+                    pageHtml = $('<li class="page-item"><a class="page-link" href="#">'+(i+1)+'</a></li>')
+                    $('.pagination').append(pageHtml)
+
+                }
+                $('.pagination').append($('<li class="page-item"><a class="page-link" href="#">Next</a></li>'))  
+                //初始化内容部分
+                $('.ari-content').empty()
+                info.forEach(ele=>{
+                    var html = $(`
+                <div class="card">
+                    <div class="card-body">
+                        <input value=`+ele.id+`>
+                        
+                        <div class="card-title"><h5>`+ele.title+`</h5><img src='`+ele.source+`' alt = ''></div>
+                        <h6 class="card-subtitle mb-2 text-muted">`+ele.status+`</h6>
+                        <div class="card-text">`+ele.content+`</div>
+                        <a href="#" class="card-link">编辑</a>
+                        <a href="#" class="card-link">删除</a>
+                    </div>
+                </div>`)
+                    $('.ari-content').append(html)
+                })
+            })
+            
+            
+             
+
+            
+            
+        }) 
+        }
+        //删除信息
+        function delInfoById(id){
+            $.get('http://47.93.255.92:7788/article/deleteById',{id},(resp)=>{
+                alert(resp.message)
+            })
+            loadInfo('all')
+        }
+        //新增信息或者更新信息
+        function saveOrUpdate(){
+            $('#artParent').empty()
+            updateList = {}
+            $('#artModal').modal('show')
+            $('#artTitle').val('')
+            $('#artTitle').val('')
+            $('#artStatus').val('未审核')
+            $('.w-e-text').empty()
+            $('.FraUpload_imglist').empty()
+            
+            console.log(arguments)
+            if(arguments.length){
+                var filler = data.filter((item)=>{
+                    return item.id == arguments[0]
+                })[0]
+                console.log(filler)
+                $('#artTitle').val(filler.title)
+                $('#artParent').val(filler.category.name)
+                $('#artStatus').val(filler.status)
+                updateList.id = arguments[0]
+            }
+            category.forEach((item)=>{
+                var html = $('<option value="'+item+'">'+item+'</option>')
+                $('#artParent').append(html)
+            })
+
+        }
+        var E = window.wangEditor;
+		    var editor = new E('#editor');
+			//创建编辑器
+		    editor.create();
+
+                 
+        // 商品图片上传
+        a = $("#upload_duixiang").FraUpload({
+            view        : ".show",      // 视图输出位置
+            url         : "http://134.175.100.63:5588/file/upload", // 上传接口
+            fetch       : "img",   // 视图现在只支持img
+            debug       : false,    // 是否开启调试模式
+            /* 外部获得的回调接口 */
+            onLoad: function(e){                    // 选择文件的回调方法
+                console.log("外部: 初始化完成...");
+            },
+            breforePort: function (e) {         // 发送前触发
+                console.log("文件发送之前触发");
+            },  
+            successPort: function (e) {         // 发送成功触发
+                console.log("文件发送成功");
+                onload_image()
+            },
+            errorPort: function (e) {       // 发送失败触发
+                console.log("文件发送失败");
+                onload_image()
+            },
+            deletePost: function(e){    // 删除文件触发
+                console.log("删除文件");
+                console.log(e);
+                alert('删除了'+e.filename)
+                onload_image()
+            },
+            sort: function(e){      // 排序触发
+                console.log("排序");
+                onload_image()
+            },
+        });
+
+        // 获取图片上传信息
+        function onload_image(){
+            var res = a.FraUpload.show()
+            var ids = [];
+            for(let k in res){
+                this_val = res[k]
+                if(!empty(res[k]['is_upload']) && !empty(res[k]['ajax'])){
+                    ajax_value = res[k]['ajax'];
+                    ids.push(ajax_value.data.id)
+                }
+            }
+            $("#imagepath").val(ids);
+            imgUrl ='http://134.175.100.63:8686/group1\/' + res[0].ajax.data.id
+            console.log(imgUrl)
+            
+            
+        }
+
+        /**
+        * 判断变量是否为空
+        */
+        function empty(value) {
+            if(value=="" || value==undefined || value==null || value==false || value==[] || value=={}){
+                return true;
+            }else{
+                return false;
+            }
+        }
+    })
+</script>

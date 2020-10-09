@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>sPage分页插件</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="./static/jquery.sPage.css">
+</head>
+<body>
+	
+
+    <div id="pNum1" class="num"></div>
+    <div id="myPage1" class="demo"></div>
+
+    
+    <script src="https://www.jq22.com/jquery/jquery-1.10.2.js"></script>
+    <script src="./static/jquery.sPage.min.js"></script>
+    <script type="text/javascript">
+        $(function(){
+            ajaxPage(0)
+        });
+
+        function ajaxPage(page){
+            console.log(page)
+            $.ajax({
+                type:"get",
+                url: "http://39.96.21.48:8099/manager/article/findArticle",
+                data: {
+                    page:page,
+                    pageSize:10
+                },
+                success: function(data){
+                    $('#pNum1').empty();
+                    data.data.list.forEach(function(item){
+                        var newDiv = $(`
+                            <div>`+item.id+`</div>
+                            <div>`+item.title+`</div>
+                            <div>`+item.content+`</div>
+                        `)
+                        $('#pNum1').append(newDiv)
+                    })
+                    $("#myPage1").sPage({
+                        page:data.data.page,
+                        pageSize:data.data.pageSize,
+                        total:data.data.total,
+                        prevPage:"←",
+                        nextPage:"→",
+                        backFun:function(page){
+                            ajaxPage(page)
+                        }
+                    });
+                },
+                error:function(e){
+                    console.log(e);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="../jquery/jquery-3.5.1/jquery-3.5.1.min.js"></script>
+    <title>登录</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        html,body{
+            width: 100%;
+            height: 100%;
+        }
+        .main{
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            /* background-color: rgb(228, 106, 106); */
+            animation: flow 30s infinite alternate;
+            align-items: center;
+            background-image: linear-gradient(135deg ,#ffb2ae85 0%, #f6989385 15%, #f0a32885 85%,#dd8c0a85 100%);
+        }
+        .content{
+            width: 700px;
+            height: 600px;
+        }
+        .content>span{
+            font-weight: 500;
+            font-size: 100px;
+            width: 100%;
+            color: #fff;
+            display: block;
+            text-align: center;
+            padding-bottom: 3%;
+        }
+        .content>span>span:last-child{
+            font-size: 40px;
+            margin-top: 5px;
+        }
+        form{
+            font-size: 30px;
+            color: #fff;
+        }
+        form input{
+            display: block;
+            height: 60px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 2%;
+            margin-bottom: 2%;
+            border-radius: 30px;
+            border:2px solid #ff86e595;
+            outline: none;
+            font-size: 40px;
+            padding-left: 10%;
+        }
+        label{
+            margin-left: 5%;
+            height: 40px;
+            transition: all 0.2s;
+        }
+    
+        button{
+            display: block;
+            height: 150px;
+            width: 150px;
+            box-sizing: border-box;
+            margin: 0 auto;
+            margin-top: 5%;
+            border-radius: 150px;
+            opacity: .7;
+            border: none;
+            color: #ddd;
+            background-color:#ffd3d185;
+            box-shadow: 1px 3px 2px rgb(228, 106, 106);
+            outline: none;
+            /* animation: flow 1s infinite alternate; */
+            transition: all 0.3s;
+            /* word-spacing: 1em; */
+            /* outline-style: double; */
+            font-size: 40px;
+            /* padding-left: 5%; */
+        }
+        button:hover{
+            color: #111;
+            width: 350px;
+        }
+        img{
+            width: 20px;
+            height: 20px;
+            position: relative;
+            top: 60px;
+            /* background-color: black; */
+        }
+        @keyframes flow {
+            0%{
+                background-color: darkblue;
+            }
+            100%{
+                background-color: lightpink;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="content">
+            <span><span>资讯管理系统</span><span>&copy;</span></span>
+            <div>
+                <form>
+                    <div class="username">
+                        <label for="username"> <i><img src="./kdzx2020/images/login/u8.png" alt=""></i> 用户名</label>
+                        <input type="text" name="username">
+                    </div>
+                    <div>
+                        <label for="password"> <i><img src="./kdzx2020/images/login/u9.png" alt=""></i> 密码</label>
+                        <input type="password" name="password" value="123321">
+                    </div>
+                    <button>登录</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    $(function(){
+        $('input[name=username]').on('focus',()=>{
+            $(event.target).prev()[0].style.fontSize = '40px'
+            $(event.target).prev()[0].style.opacity = '.6'
+        })
+        $('input[name=password]').on('focus',()=>{
+            $(event.target).prev()[0].style.opacity = '.6'
+            $(event.target).prev()[0].style.fontSize = '40px'
+        })
+        $('input[name=username]').on('blur',()=>{
+            $(event.target).prev()[0].style.opacity = '1'
+            $(event.target).prev()[0].style.fontSize = '30px'
+        })
+        $('input[name=password]').on('blur',()=>{
+            $(event.target).prev()[0].style.opacity = '1'
+            $(event.target).prev()[0].style.fontSize = '30px'
+        })
+        $('button').blur(()=>{
+            $(event.target)[0].style.backgroundColor = '#ffd3d185'
+
+        })
+        $('button').click(()=>{
+            event.preventDefault()
+            console.log($(event.target).style)
+            $(event.target)[0].style.backgroundColor = '#2fdfff85'
+            const username = $('input[name=username]').val()
+            const password = $('input[name=password]').val()
+            $.ajax({
+                url:'http://47.93.255.92:7788/user/login',
+                method:'POST',
+                contentType:'application/json',
+                data:JSON.stringify(
+                    {
+                        username: username,
+                        password: password
+                }),
+                success:(reps)=>{
+                    if(reps.status == 500){
+                        alert(reps.message)
+                    }else{
+                        sessionStorage.setItem('token',reps.data.token)
+                        
+                        location.href = 'http://127.0.0.1:52330/kdzx/home.html'
+                    }
+                    console.log(location.href)
+                    
+                },
+                error:(resp)=>{
+
+                }
+            })
+        })
+        //画不画补
+    })
+</script>
+</html>
